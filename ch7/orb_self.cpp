@@ -45,9 +45,9 @@ int main(int argc, char **argv) {
   // detect FAST keypoints1 using threshold=40
   chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
   vector<cv::KeyPoint> keypoints1;
-  cv::FAST(first_image, keypoints1, 40);
+  cv::FAST(first_image, keypoints1, 40); // 检测FAST关键点
   vector<DescType> descriptor1;
-  ComputeORB(first_image, keypoints1, descriptor1);
+  ComputeORB(first_image, keypoints1, descriptor1); // 计算描述子
 
   // same for the second
   vector<cv::KeyPoint> keypoints2;
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
   // find matches
   vector<cv::DMatch> matches;
   t1 = chrono::steady_clock::now();
-  BfMatch(descriptor1, descriptor2, matches);
+  BfMatch(descriptor1, descriptor2, matches); // 匹配描述子
   t2 = chrono::steady_clock::now();
   time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
   cout << "match ORB cost = " << time_used.count() << " seconds. " << endl;
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 }
 
 // -------------------------------------------------------------------------------------------------- //
-// ORB pattern
+// ORB pattern： 最优采样位置，用于计算描述子
 int ORB_pattern[256 * 4] = {
   8, -3, 9, 5/*mean (0), correlation (0)*/,
   4, 2, 7, -12/*mean (1.12461e-05), correlation (0.0437584)*/,
@@ -339,10 +339,10 @@ int ORB_pattern[256 * 4] = {
   -1, -6, 0, -11/*mean (0.127148), correlation (0.547401)*/
 };
 
-// compute the descriptor
+// compute the descriptor 计算描述子
 void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<DescType> &descriptors) {
-  const int half_patch_size = 8;
-  const int half_boundary = 16;
+  const int half_patch_size = 8; // 半径为8的patch
+  const int half_boundary = 16; // 半径为16的边界
   int bad_points = 0;
   for (auto &kp: keypoints) {
     if (kp.pt.x < half_boundary || kp.pt.y < half_boundary ||
@@ -362,8 +362,10 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
       }
     }
 
-    // angle should be arc tan(m01/m10);
+    // angle should be arc tan(m01/m10); 
+    // 灰度质心法计算关键点主方向(本来应该用atan2算theta,但我们用了一个等价的更快写法)
     float m_sqrt = sqrt(m01 * m01 + m10 * m10) + 1e-18; // avoid divide by zero
+    // 后面要旋转256对pattern点,需要的就是cos_theta和sin_theta,所以这里先计算出来，没有显式计算theta
     float sin_theta = m01 / m_sqrt;
     float cos_theta = m10 / m_sqrt;
 
@@ -393,7 +395,7 @@ void ComputeORB(const cv::Mat &img, vector<cv::KeyPoint> &keypoints, vector<Desc
   cout << "bad/total: " << bad_points << "/" << keypoints.size() << endl;
 }
 
-// brute-force matching
+// brute-force matching 暴力匹配
 void BfMatch(const vector<DescType> &desc1, const vector<DescType> &desc2, vector<cv::DMatch> &matches) {
   const int d_max = 40;
 

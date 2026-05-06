@@ -18,19 +18,19 @@ int main(int argc, char **argv) {
   assert(img_1.data != nullptr && img_2.data != nullptr);
 
   //-- 初始化
-  std::vector<KeyPoint> keypoints_1, keypoints_2;
-  Mat descriptors_1, descriptors_2;
-  Ptr<FeatureDetector> detector = ORB::create();
-  Ptr<DescriptorExtractor> descriptor = ORB::create();
-  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
+  std::vector<KeyPoint> keypoints_1, keypoints_2; // 关键点
+  Mat descriptors_1, descriptors_2; // 描述子
+  Ptr<FeatureDetector> detector = ORB::create(); // 特征检测器
+  Ptr<DescriptorExtractor> descriptor = ORB::create(); // 描述子提取器
+  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming"); // 描述子匹配器
 
   //-- 第一步:检测 Oriented FAST 角点位置
   chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
-  detector->detect(img_1, keypoints_1);
+  detector->detect(img_1, keypoints_1); // 检测关键点
   detector->detect(img_2, keypoints_2);
 
   //-- 第二步:根据角点位置计算 BRIEF 描述子
-  descriptor->compute(img_1, keypoints_1, descriptors_1);
+  descriptor->compute(img_1, keypoints_1, descriptors_1); // 计算描述子
   descriptor->compute(img_2, keypoints_2, descriptors_2);
   chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
   chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
   imshow("ORB features", outimg1);
 
   //-- 第三步:对两幅图像中的BRIEF描述子进行匹配，使用 Hamming 距离
+  // Hamming距离：两个二进制串之间的汉明距离是两个串中对应位置上不同比特的个数。
   vector<DMatch> matches;
   t1 = chrono::steady_clock::now();
   matcher->match(descriptors_1, descriptors_2, matches);

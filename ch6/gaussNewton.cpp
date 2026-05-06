@@ -8,18 +8,18 @@ using namespace std;
 using namespace Eigen;
 
 int main(int argc, char **argv) {
-  double ar = 1.0, br = 2.0, cr = 1.0;         // 真实参数值
-  double ae = 2.0, be = -1.0, ce = 5.0;        // 估计参数值
+  double ar = 1.0, br = 2.0, cr = 1.0;         // 真实参数值，假定曲线为exp(x^2+2x+1)
+  double ae = 2.0, be = -1.0, ce = 5.0;        // 估计参数值，也是最终优化的对象，得到更接近真实参数的结果
   int N = 100;                                 // 数据点
-  double w_sigma = 1.0;                        // 噪声Sigma值
-  double inv_sigma = 1.0 / w_sigma;
+  double w_sigma = 1.0;                        // 噪声Sigma值，噪声 ~ N(0,w_sigma^2)
+  double inv_sigma = 1.0 / w_sigma;           // 1/w_sigma 倒数
   cv::RNG rng;                                 // OpenCV随机数产生器
 
-  vector<double> x_data, y_data;      // 数据
+  vector<double> x_data, y_data;      // 构建数据
   for (int i = 0; i < N; i++) {
     double x = i / 100.0;
-    x_data.push_back(x);
-    y_data.push_back(exp(ar * x * x + br * x + cr) + rng.gaussian(w_sigma * w_sigma));
+    x_data.push_back(x); // x_data = [0.00, 0.01, 0.02, ..., 0.99]
+    y_data.push_back(exp(ar * x * x + br * x + cr) + rng.gaussian(w_sigma * w_sigma)); // y = exp(x^2+2x+1) + noise
   }
 
   // 开始Gauss-Newton迭代
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < N; i++) {
       double xi = x_data[i], yi = y_data[i];  // 第i个数据点
-      double error = yi - exp(ae * xi * xi + be * xi + ce);
+      double error = yi - exp(ae * xi * xi + be * xi + ce); // 误差 = 观测值 - 预测值
       Vector3d J; // 雅可比矩阵
       J[0] = -xi * xi * exp(ae * xi * xi + be * xi + ce);  // de/da
       J[1] = -xi * exp(ae * xi * xi + be * xi + ce);  // de/db
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
       cost += error * error;
     }
 
-    // 求解线性方程 Hx=b
+    // 求解线性方程 Hx=b, 使用ldlt分解
     Vector3d dx = H.ldlt().solve(b);
     if (isnan(dx[0])) {
       cout << "result is nan!" << endl;
