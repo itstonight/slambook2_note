@@ -49,21 +49,25 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < 5; i++) {
         cout << "转换图像中: " << i + 1 << endl;
-        cv::Mat color = colorImgs[i];
-        cv::Mat depth = depthImgs[i];
-        Sophus::SE3d T = poses[i];
-        for (int v = 0; v < color.rows; v++)
-            for (int u = 0; u < color.cols; u++) {
+        cv::Mat color = colorImgs[i]; // 彩色图
+        cv::Mat depth = depthImgs[i]; // 深度图
+        Sophus::SE3d T = poses[i]; // 相机位姿
+        for (int v = 0; v < color.rows; v++) 
+            for (int u = 0; u < color.cols; u++) { // 遍历每行的每个像素点
                 unsigned int d = depth.ptr<unsigned short>(v)[u]; // 深度值
                 if (d == 0) continue; // 为0表示没有测量到
+                // 将深度值转换为相机坐标系下的坐标
                 Eigen::Vector3d point;
+                // 相机模型里先投影到 归一化平面 Z = 1, 这步骤反过来用深度 Z 把点从 Z=1 拉回真实空间
                 point[2] = double(d) / depthScale;
                 point[0] = (u - cx) * point[2] / fx;
                 point[1] = (v - cy) * point[2] / fy;
+                // 将相机坐标系下的坐标转换为世界坐标系下的坐标
                 Eigen::Vector3d pointWorld = T * point;
 
-                Vector6d p;
-                p.head<3>() = pointWorld;
+                Vector6d p; // [x y z r g b]
+                p.head<3>() = pointWorld; // 前三个元素赋值为世界坐标
+                // 给点云添加颜色
                 p[5] = color.data[v * color.step + u * color.channels()];   // blue
                 p[4] = color.data[v * color.step + u * color.channels() + 1]; // green
                 p[3] = color.data[v * color.step + u * color.channels() + 2]; // red

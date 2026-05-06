@@ -10,15 +10,20 @@ using namespace std;
 string groundtruth_file = "./example/groundtruth.txt";
 string estimated_file = "./example/estimated.txt";
 
+// 轨迹数据类型
 typedef vector<Sophus::SE3d, Eigen::aligned_allocator<Sophus::SE3d>> TrajectoryType;
 
+// 绘制轨迹函数
 void DrawTrajectory(const TrajectoryType &gt, const TrajectoryType &esti);
 
+// 读取轨迹函数
 TrajectoryType ReadTrajectory(const string &path);
 
 int main(int argc, char **argv) {
+  // 读取真实轨迹与估计轨迹
   TrajectoryType groundtruth = ReadTrajectory(groundtruth_file);
   TrajectoryType estimated = ReadTrajectory(estimated_file);
+  // 断言轨迹不为空且轨迹长度相等
   assert(!groundtruth.empty() && !estimated.empty());
   assert(groundtruth.size() == estimated.size());
 
@@ -26,6 +31,7 @@ int main(int argc, char **argv) {
   double rmse = 0;
   for (size_t i = 0; i < estimated.size(); i++) {
     Sophus::SE3d p1 = estimated[i], p2 = groundtruth[i];
+    // 误差为真实相机位置”走到“估计相机位置”需要做的那个变换的模长
     double error = (p2.inverse() * p1).log().norm();
     rmse += error * error;
   }
@@ -48,12 +54,14 @@ TrajectoryType ReadTrajectory(const string &path) {
   while (!fin.eof()) {
     double time, tx, ty, tz, qx, qy, qz, qw;
     fin >> time >> tx >> ty >> tz >> qx >> qy >> qz >> qw;
+    // 构造SE3位姿
     Sophus::SE3d p1(Eigen::Quaterniond(qw, qx, qy, qz), Eigen::Vector3d(tx, ty, tz));
     trajectory.push_back(p1);
   }
   return trajectory;
 }
 
+// 绘制轨迹
 void DrawTrajectory(const TrajectoryType &gt, const TrajectoryType &esti) {
   // create pangolin window and plot the trajectory
   pangolin::CreateWindowAndBind("Trajectory Viewer", 1024, 768);

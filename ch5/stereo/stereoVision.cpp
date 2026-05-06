@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     cv::Mat left = cv::imread(left_file, 0);
     cv::Mat right = cv::imread(right_file, 0);
     cv::Ptr<cv::StereoSGBM> sgbm = cv::StereoSGBM::create(
-        0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数
+        0, 96, 9, 8 * 9 * 9, 32 * 9 * 9, 1, 63, 10, 100, 32);    // 神奇的参数（经验调参）
     cv::Mat disparity_sgbm, disparity;
     sgbm->compute(left, right, disparity_sgbm);
     disparity_sgbm.convertTo(disparity, CV_32F, 1.0 / 16.0f);
@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
             Vector4d point(0, 0, 0, left.at<uchar>(v, u) / 255.0); // 前三维为xyz,第四维为颜色
 
             // 根据双目模型计算 point 的位置
-            double x = (u - cx) / fx;
-            double y = (v - cy) / fy;
+            double x = (u - cx) / fx; // 归一化相机平面上的坐标
+            double y = (v - cy) / fy; // 归一化相机平面上的坐标
             double depth = fx * b / (disparity.at<float>(v, u));
-            point[0] = x * depth;
-            point[1] = y * depth;
-            point[2] = depth;
+            point[0] = x * depth; // 将归一化相机平面上的坐标转换为相机坐标系下的坐标
+            point[1] = y * depth; // 将归一化相机平面上的坐标转换为相机坐标系下的坐标
+            point[2] = depth; // 深度
 
             pointcloud.push_back(point);
         }
