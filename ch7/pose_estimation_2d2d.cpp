@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
       t.at<double>(2, 0), 0, -t.at<double>(0, 0),
       -t.at<double>(1, 0), t.at<double>(0, 0), 0);
 
-  cout << "t^R=" << endl << t_x * R << endl;
+  cout << "t^R=" << endl << t_x * R << endl; // 此处打印出的本质矩阵和find_feature_matches函数中计算出的本质矩阵数值不相同，但都表示本质矩阵（因为相差一个尺度）
 
   //-- 验证对极约束
   Mat K = (Mat_<double>(3, 3) << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1);
@@ -62,11 +62,12 @@ int main(int argc, char **argv) {
     Point2d pt2 = pixel2cam(keypoints_2[m.trainIdx].pt, K);
     Mat y2 = (Mat_<double>(3, 1) << pt2.x, pt2.y, 1);
     Mat d = y2.t() * t_x * R * y1;
-    cout << "epipolar constraint = " << d << endl;
+    cout << "epipolar constraint = " << d << endl; // 对极约束，打印出的结果应该为0（不是严格的数字0,是非常小的数值）
   }
   return 0;
 }
 
+// 寻找特征点匹配
 void find_feature_matches(const Mat &img_1, const Mat &img_2,
                           std::vector<KeyPoint> &keypoints_1,
                           std::vector<KeyPoint> &keypoints_2,
@@ -103,6 +104,7 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2,
     if (dist > max_dist) max_dist = dist;
   }
 
+  // 打印最大距离和最小距离
   printf("-- Max dist : %f \n", max_dist);
   printf("-- Min dist : %f \n", min_dist);
 
@@ -122,6 +124,7 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
     );
 }
 
+// 2d-2d对极几何，计算基础矩阵和本质矩阵，恢复旋转和平移信息
 void pose_estimation_2d2d(std::vector<KeyPoint> keypoints_1,
                           std::vector<KeyPoint> keypoints_2,
                           std::vector<DMatch> matches,
